@@ -8,6 +8,7 @@ import { Hero } from "@/components/hero";
 import { LinkButton } from "@/components/link-button";
 import { Orb } from "@/components/parallax";
 import { Reveal } from "@/components/reveal";
+import { SelQuizPromo } from "@/components/sel-quiz-promo";
 import { Section, SectionTitle } from "@/components/section";
 import { about, members, schedule } from "@/lib/content";
 import { asset } from "@/lib/site";
@@ -59,7 +60,10 @@ export default function Home() {
       </Section>
 
       <Section id="breathing">
-        <BreathingPromo />
+        <div className="space-y-6 md:space-y-10">
+          <BreathingPromo />
+          <SelQuizPromo />
+        </div>
       </Section>
 
       <Section id="schedule">

@@ -7,6 +7,7 @@ import { Lightbox, Photo } from "@/components/lightbox";
 import { LinkButton } from "@/components/link-button";
 import { Orb } from "@/components/parallax";
 import { Reveal } from "@/components/reveal";
+import { SelQuizPromo } from "@/components/sel-quiz-promo";
 import { Section } from "@/components/section";
 import { outcomes } from "@/lib/content";
 
@@ -96,7 +97,10 @@ export default function Outcomes() {
       </Section>
 
       <Section id="breathing">
-        <BreathingPromo />
+        <div className="space-y-6 md:space-y-10">
+          <BreathingPromo />
+          <SelQuizPromo />
+        </div>
       </Section>
 
       <BackToTop />
