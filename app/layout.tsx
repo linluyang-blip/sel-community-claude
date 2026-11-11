@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_TC, Outfit } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { ScrollProgress } from "@/components/scroll-progress";
@@ -29,6 +29,12 @@ export const metadata: Metadata = {
     type: "website",
     images: `${siteUrl}/og-image.jpg`,
   },
+  // 加到 iPhone 主畫面後以全螢幕開啟，圖示下方顯示的名稱。
+  appleWebApp: { capable: true, title: "SEL 呼吸", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2b7a78",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
