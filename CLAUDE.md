@@ -15,7 +15,9 @@
 ## 部署
 
 **推送到 `main` 會直接更新正式網站。** `.github/workflows/deploy.yml` 會建置並把 `out/` 部署到 GitHub Pages：
-https://linluyang-blip.github.io/sel-community-anti/
+https://linluyang-blip.github.io/sel-community-claude/
+
+網站在 2026-11-11 從 `sel-community-anti` repo 搬到 `sel-community-claude`（`origin`）。舊 repo 是本機的 `old` remote：`main` 分支保留搬家前的程式碼封存，Pages 改由 `redirect` 分支部署轉址頁，把 `/sel-community-anti/...` 的舊網址連同路徑與錨點轉到新網址。不要再推送到 `old`。
 
 網站必須維持可靜態輸出（`output: "export"`），因此不能使用 Server Actions、Route Handlers 的動態功能、cookies、rewrites 等需要伺服器的功能。`cacheComponents` 也與靜態輸出不相容。
 
