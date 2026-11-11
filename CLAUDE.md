@@ -6,7 +6,7 @@
 
 ## 指令
 
-- `npm run dev`：本機開發，網址是 http://localhost:3000/sel-community-anti/（路徑不可省略）
+- `npm run dev`：本機開發，網址是 http://localhost:3000/sel-community-claude/（路徑不可省略）
 - `npm run build`：靜態輸出到 `out/`
 - `npm run lint`：ESLint
 
