@@ -38,7 +38,7 @@ Next.js App Router + Tailwind CSS 4 + TypeScript。
 - `next/image` 與 `<img>` 不會自動加 `basePath`，路徑要用 `asset("/xxx.jpg")`；`next/link` 會自動加。
 - 所有 `<Link>` 都要設 `prefetch={false}`。靜態輸出的預載檔路徑與瀏覽器請求的路徑不一致，開啟會產生 404。
 - `trailingSlash: true` 不要拿掉，否則 `outcomes.html` 與 `outcomes/` 資料夾會在 GitHub Pages 上衝突。
-- 響應式斷點：導覽列在 `md` 切換漢堡選單，時程軸在 `lg` 切換左右交錯。
+- 響應式斷點：導覽列在 `lg` 切換漢堡選單（7 個連結在 `md` 寬度會擠不下），時程軸在 `lg` 切換左右交錯。
 - 視差用 `components/parallax.tsx` 的 `<Parallax>` / `<Orb>`，會自動尊重「減少動態效果」設定，手機上強度減半。
 
 ## 常見修改

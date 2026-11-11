@@ -11,6 +11,7 @@ const links = [
   { href: "/outcomes", label: "成果發表" },
   { href: "/#members", label: "成員介紹" },
   { href: "/breathing", label: "呼吸放鬆" },
+  { href: "/sel-quiz", label: "SEL 自評" },
 ];
 
 export function Nav() {
@@ -26,10 +27,10 @@ export function Nav() {
   }, [open]);
 
   return (
-    <nav className="fixed top-0 z-1000 flex w-full items-center justify-between border-b border-glass bg-white/70 px-[5%] py-3 shadow-[0_4px_15px_rgba(0,0,0,0.02)] backdrop-blur-md md:py-[1.2rem]">
-      <div className="text-lg font-bold tracking-[0.5px] whitespace-nowrap text-primary md:text-xl">SEL 運動共學社群</div>
+    <nav className="fixed top-0 z-1000 flex w-full items-center justify-between border-b border-glass bg-white/70 px-[5%] py-3 shadow-[0_4px_15px_rgba(0,0,0,0.02)] backdrop-blur-md lg:py-[1.2rem]">
+      <div className="text-lg font-bold tracking-[0.5px] whitespace-nowrap text-primary lg:text-xl">SEL 運動共學社群</div>
 
-      <ul className="hidden gap-6 lg:gap-10 md:flex">
+      <ul className="hidden gap-6 lg:flex xl:gap-10">
         {links.map(({ href, label }) => (
           <li key={href}>
             <Link
@@ -49,13 +50,13 @@ export function Nav() {
         aria-label={open ? "關閉選單" : "開啟選單"}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex size-10 cursor-pointer items-center justify-center text-2xl text-primary md:hidden"
+        className="flex size-10 cursor-pointer items-center justify-center text-2xl text-primary lg:hidden"
       >
         {open ? <X /> : <List />}
       </button>
 
       {open && (
-        <ul className="absolute inset-x-0 top-full border-b border-glass bg-white px-[5%] py-2 shadow-soft md:hidden">
+        <ul className="absolute inset-x-0 top-full border-b border-glass bg-white px-[5%] py-2 shadow-soft lg:hidden">
           {links.map(({ href, label }) => (
             <li key={href}>
               <Link href={href} prefetch={false} onClick={() => setOpen(false)} className="block py-3 font-medium hover:text-primary">
