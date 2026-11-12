@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircle, DownloadSimple, LockSimple, PencilSimple, Trash } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   MAX_NOTE,
   MAX_TAGS,
@@ -59,6 +59,7 @@ export function MoodCheckin() {
   const entries = useMemo(() => parseEntries(raw ?? null), [raw]);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
+  const top = useRef<HTMLDivElement>(null);
 
   if (raw === undefined || today === null) {
     return <div className="min-h-[480px]" aria-busy="true" />;
@@ -72,6 +73,11 @@ export function MoodCheckin() {
   }
 
   const todayEntry = entries.find((e) => e.date === today);
+  // 表單換成摘要（或反過來）時高度差很多，手機上要捲回卡片頂端，否則看不到結果。
+  const show = (nextEditing: boolean) => {
+    setEditing(nextEditing);
+    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const save = (next: Entry[]) => {
     const ok = writeEntries(next);
     setError(ok ? "" : "儲存失敗：瀏覽器的儲存空間可能已滿或被封鎖。");
@@ -79,21 +85,21 @@ export function MoodCheckin() {
   };
 
   return (
-    <div>
+    <div ref={top}>
       <p className="mb-6 flex items-center gap-1.5 text-[0.9rem] text-muted">
         <LockSimple className="shrink-0" /> 紀錄只存在這台裝置的瀏覽器，不會上傳，別人看不到。
       </p>
 
       {todayEntry && !editing ? (
-        <TodaySummary entry={todayEntry} onEdit={() => setEditing(true)} />
+        <TodaySummary entry={todayEntry} onEdit={() => show(true)} />
       ) : (
         <TodayForm
           key={today}
           today={today}
           initial={todayEntry}
-          onCancel={todayEntry ? () => setEditing(false) : undefined}
+          onCancel={todayEntry ? () => show(false) : undefined}
           onSave={(entry) => {
-            if (save([entry, ...entries.filter((e) => e.date !== entry.date)])) setEditing(false);
+            if (save([entry, ...entries.filter((e) => e.date !== entry.date)])) show(false);
           }}
         />
       )}
@@ -241,7 +247,7 @@ function TodaySummary({ entry, onEdit }: { entry: Entry; onEdit: () => void }) {
   const l = levels[entry.level - 1];
   return (
     <div>
-      <p className="mb-2 flex items-center gap-2 font-semibold text-primary">
+      <p role="status" className="mb-2 flex items-center gap-2 font-semibold text-primary">
         <CheckCircle weight="fill" className="text-xl" /> 今天已經打卡了
       </p>
       <h2 className="mb-6 text-[1.5rem] font-bold md:text-[1.8rem]">{longDate(entry.date)}</h2>
@@ -254,7 +260,11 @@ function TodaySummary({ entry, onEdit }: { entry: Entry; onEdit: () => void }) {
           <p className="mb-2 font-bold text-primary">辛苦了，謝謝你願意停下來看看自己。</p>
           <p className="mb-2">
             心情低落是正常的訊號。可以先做幾分鐘呼吸放鬆，或找一位信任的同事聊聊。如果低落持續兩週以上，或影響到睡眠與生活，建議尋求專業協助，例如學校輔導室，或撥打衛福部安心專線
-            <strong> 1925</strong>（24 小時免付費）。
+            {" "}
+            <a href="tel:1925" className="font-bold text-primary underline underline-offset-4">
+              1925
+            </a>
+            （24 小時免付費）。
           </p>
           <Link href="/breathing#timer" prefetch={false} className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline">
             試試呼吸放鬆計時器 <ArrowRight />

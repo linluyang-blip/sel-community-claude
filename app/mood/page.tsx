@@ -54,7 +54,11 @@ export default function MoodPage() {
             </ul>
 
             <p className="rounded-2xl bg-secondary/10 p-4 text-[0.95rem] text-ink/80">
-              這是幫助自我覺察的小工具，不是心理測驗或診斷。如果低落的心情持續兩週以上，建議尋求專業協助，例如學校輔導室，或撥打衛福部安心專線 1925（24 小時免付費）。
+              這是幫助自我覺察的小工具，不是心理測驗或診斷。如果低落的心情持續兩週以上，建議尋求專業協助，例如學校輔導室，或撥打衛福部安心專線{" "}
+              <a href="tel:1925" className="font-bold text-primary underline underline-offset-4">
+                1925
+              </a>
+              （24 小時免付費）。
             </p>
           </Card>
         </div>
