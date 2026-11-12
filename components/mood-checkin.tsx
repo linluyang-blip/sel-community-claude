@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, CheckCircle, DownloadSimple, LockSimple, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowRight, CheckCircle, DownloadSimple, LockSimple, LockSimpleOpen, PencilSimple, Trash } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   MAX_NOTE,
   MAX_TAGS,
@@ -16,9 +16,11 @@ import {
   subscribe,
   toCsv,
   writeEntries,
+  writeRaw,
   type Entry,
   type Level,
 } from "@/lib/mood";
+import { MIN_PASSWORD, asLocked, cryptoAvailable, decrypt, encrypt, looksLocked, newSession, unlock, type Session } from "@/lib/mood-crypto";
 
 // 紀錄只存在這個瀏覽器的 localStorage，不上傳；React 會自動跳脫文字，使用者寫的內容不會被當成 HTML 執行。
 
@@ -52,14 +54,56 @@ function subscribeDay(onChange: () => void) {
 }
 const getToday = () => localDate();
 
+/** 解鎖後閒置多久自動上鎖。 */
+const IDLE_MS = 10 * 60 * 1000;
+
 export function MoodCheckin() {
   // 伺服器端（靜態輸出）沒有 localStorage，回傳 undefined 代表「尚未讀取」，避免 hydration 不一致。
   const raw = useSyncExternalStore(subscribe, readRaw, () => undefined);
   const today = useSyncExternalStore(subscribeDay, getToday, () => null);
-  const entries = useMemo(() => parseEntries(raw ?? null), [raw]);
+  const locked = useMemo(() => (raw ? asLocked(raw) : null), [raw]);
+  const plain = useMemo(() => (locked ? [] : parseEntries(raw ?? null)), [raw, locked]);
+  // 解鎖後的金鑰與紀錄只放在記憶體，關閉或重新整理分頁就會消失（等於上鎖）。
+  const [session, setSession] = useState<Session | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const top = useRef<HTMLDivElement>(null);
+  const unlocked = !!(locked && session);
+
+  // 其他分頁改了加密的紀錄：用手上的金鑰重新解密；解不開（例如密碼在別的分頁被改了）就上鎖。
+  useEffect(() => {
+    if (!locked || !session || raw === session.raw) return;
+    let cancelled = false;
+    decrypt(session.key, locked).then(
+      (entries) => !cancelled && setSession({ ...session, raw: raw!, entries }),
+      () => !cancelled && setSession(null),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [raw, locked, session]);
+
+  // 閒置自動上鎖；手機休眠後回到分頁時也檢查（背景分頁的計時器可能被瀏覽器暫停）。
+  useEffect(() => {
+    if (!unlocked) return;
+    let last = Date.now();
+    const lock = () => setSession(null);
+    let timer = setTimeout(lock, IDLE_MS);
+    const activity = () => {
+      last = Date.now();
+      clearTimeout(timer);
+      timer = setTimeout(lock, IDLE_MS);
+    };
+    const visible = () => document.visibilityState === "visible" && Date.now() - last > IDLE_MS && lock();
+    const events = ["pointerdown", "keydown", "scroll"] as const;
+    events.forEach((e) => window.addEventListener(e, activity, { passive: true }));
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, activity));
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [unlocked]);
 
   if (raw === undefined || today === null) {
     return <div className="min-h-[480px]" aria-busy="true" />;
@@ -71,15 +115,40 @@ export function MoodCheckin() {
       </p>
     );
   }
+  if (!locked && raw && looksLocked(raw)) {
+    return (
+      <div className="space-y-4">
+        <p role="alert" className="rounded-2xl border border-[#b4473a]/30 p-4 text-ink/80">
+          加密的紀錄格式不正確，可能已經損壞，所以無法解鎖。如果確定不需要這些紀錄，可以清除後重新開始。
+        </p>
+        <button type="button" onClick={() => writeRaw(null)} className={`${btnSmall} bg-[#b4473a] text-white hover:bg-[#9a3b30]`}>
+          清除紀錄並重新開始
+        </button>
+      </div>
+    );
+  }
+  if (locked && !session) {
+    return <UnlockScreen raw={raw} onUnlock={setSession} />;
+  }
 
+  const entries = session && locked ? session.entries : plain;
   const todayEntry = entries.find((e) => e.date === today);
   // 表單換成摘要（或反過來）時高度差很多，手機上要捲回卡片頂端，否則看不到結果。
   const show = (nextEditing: boolean) => {
     setEditing(nextEditing);
     top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const save = (next: Entry[]) => {
-    const ok = writeEntries(next);
+  const save = async (next: Entry[]) => {
+    let ok = false;
+    if (session && locked) {
+      try {
+        const s = await encrypt(session, next);
+        ok = writeRaw(s.raw);
+        if (ok) setSession(s);
+      } catch {}
+    } else {
+      ok = writeEntries(next);
+    }
     setError(ok ? "" : "儲存失敗：瀏覽器的儲存空間可能已滿或被封鎖。");
     return ok;
   };
@@ -87,7 +156,8 @@ export function MoodCheckin() {
   return (
     <div ref={top}>
       <p className="mb-6 flex items-center gap-1.5 text-[0.9rem] text-muted">
-        <LockSimple className="shrink-0" /> 紀錄只存在這台裝置的瀏覽器，不會上傳，別人看不到。
+        <LockSimple className="shrink-0" />
+        {unlocked ? "紀錄已用密碼加密，只存在這台裝置的瀏覽器。" : "紀錄只存在這台裝置的瀏覽器，不會上傳，別人看不到。"}
       </p>
 
       {todayEntry && !editing ? (
@@ -99,7 +169,7 @@ export function MoodCheckin() {
           initial={todayEntry}
           onCancel={todayEntry ? () => show(false) : undefined}
           onSave={(entry) => {
-            if (save([entry, ...entries.filter((e) => e.date !== entry.date)])) show(false);
+            save([entry, ...entries.filter((e) => e.date !== entry.date)]).then((ok) => ok && show(false));
           }}
         />
       )}
@@ -109,7 +179,19 @@ export function MoodCheckin() {
         </p>
       )}
 
-      {entries.length > 0 && <History entries={entries} today={today} onSave={save} />}
+      {entries.length > 0 && <History entries={entries} today={today} encrypted={unlocked} onSave={save} />}
+
+      {cryptoAvailable() && (
+        <LockPanel
+          raw={raw}
+          entries={entries}
+          session={unlocked ? session : null}
+          onSession={(s) => {
+            setSession(s);
+            if (!s) top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -300,7 +382,9 @@ function EntryBody({ entry }: { entry: Entry }) {
 
 // ---------- 歷史紀錄 ----------
 
-function History({ entries, today, onSave }: { entries: Entry[]; today: string; onSave: (e: Entry[]) => boolean }) {
+type HistoryProps = { entries: Entry[]; today: string; encrypted: boolean; onSave: (e: Entry[]) => Promise<boolean> };
+
+function History({ entries, today, encrypted, onSave }: HistoryProps) {
   const [shown, setShown] = useState(7);
   const [confirming, setConfirming] = useState<string | null>(null);
   const byDate = new Map(entries.map((e) => [e.date, e]));
@@ -391,7 +475,7 @@ function History({ entries, today, onSave }: { entries: Entry[]; today: string; 
                 <span className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => onSave(entries.filter((x) => x.date !== e.date)) && setConfirming(null)}
+                    onClick={() => onSave(entries.filter((x) => x.date !== e.date)).then((ok) => ok && setConfirming(null))}
                     className={`${btnSmall} bg-[#b4473a] text-white hover:bg-[#9a3b30]`}
                   >
                     確定刪除
@@ -423,7 +507,7 @@ function History({ entries, today, onSave }: { entries: Entry[]; today: string; 
         {confirming === "all" ? (
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-[0.9rem] font-semibold text-[#b4473a]">全部 {entries.length} 筆紀錄都會刪除，無法復原。</span>
-            <button type="button" onClick={() => onSave([]) && setConfirming(null)} className={`${btnSmall} bg-[#b4473a] text-white hover:bg-[#9a3b30]`}>
+            <button type="button" onClick={() => onSave([]).then((ok) => ok && setConfirming(null))} className={`${btnSmall} bg-[#b4473a] text-white hover:bg-[#9a3b30]`}>
               確定清除
             </button>
             <button type="button" onClick={() => setConfirming(null)} className={`${btnSmall} text-muted hover:bg-primary/5`}>
@@ -436,6 +520,220 @@ function History({ entries, today, onSave }: { entries: Entry[]; today: string; 
           </button>
         )}
       </div>
+      {encrypted && <p className="mt-3 text-[0.85rem] text-muted">下載的 CSV 檔案沒有加密，請存放在安全的地方。</p>}
+    </section>
+  );
+}
+
+// ---------- 密碼鎖 ----------
+
+const inputClass =
+  "w-full rounded-2xl border-2 border-primary/20 bg-white/70 px-4 py-3 text-base outline-none transition-colors focus:border-primary";
+const errorClass = "text-[0.9rem] font-semibold text-[#b4473a]";
+const dangerSmall = `${btnSmall} bg-[#b4473a] text-white hover:bg-[#9a3b30]`;
+const plainSmall = `${btnSmall} text-muted hover:bg-primary/5`;
+const outlineSmall = `${btnSmall} border-2 border-primary/25 text-primary hover:bg-primary/10`;
+
+// 讓瀏覽器的密碼管理員知道這組密碼屬於哪個工具。
+const UsernameHint = () => <input type="text" name="username" autoComplete="username" value="情緒溫度計" readOnly hidden />;
+
+function PasswordField({ label, value, onChange, autoComplete }: { label: string; value: string; onChange: (v: string) => void; autoComplete: string }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[0.9rem] font-semibold">{label}</span>
+      <input type="password" value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete} className={inputClass} />
+    </label>
+  );
+}
+
+function UnlockScreen({ raw, onUnlock }: { raw: string; onUnlock: (s: Session) => void }) {
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [forgot, setForgot] = useState(false);
+
+  return (
+    <div>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!password || busy) return;
+          setBusy(true);
+          setError("");
+          const s = await unlock(password, raw).catch(() => null);
+          setBusy(false);
+          if (s) onUnlock(s);
+          else setError("密碼不正確，請再試一次。");
+        }}
+      >
+        <UsernameHint />
+        <p className="mb-2 flex items-center gap-2 font-semibold text-primary">
+          <LockSimple weight="fill" className="text-xl" /> 紀錄已上鎖
+        </p>
+        <h2 className="mb-2 text-[1.5rem] font-bold md:text-[1.8rem]">輸入密碼來打開紀錄</h2>
+        <p className="mb-6 text-muted">紀錄已用密碼加密，沒有密碼的人只會看到亂碼。</p>
+        <div className="mb-4">
+          <PasswordField label="密碼" value={password} onChange={setPassword} autoComplete="current-password" />
+        </div>
+        {error && (
+          <p role="alert" className={`mb-4 ${errorClass}`}>
+            {error}
+          </p>
+        )}
+        <button type="submit" disabled={!password || busy} className={btnPrimary}>
+          <LockSimpleOpen /> {busy ? "解鎖中…" : "解鎖"}
+        </button>
+      </form>
+
+      <div className="mt-10 border-t border-primary/10 pt-6">
+        {forgot ? (
+          <div className="space-y-3">
+            <p className="text-ink/80">
+              密碼無法找回，這是為了確保別人也沒辦法繞過密碼。唯一的方法是<strong>清除全部紀錄</strong>重新開始，清除後無法復原。
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => writeRaw(null)} className={dangerSmall}>
+                清除全部紀錄並重新開始
+              </button>
+              <button type="button" onClick={() => setForgot(false)} className={plainSmall}>
+                取消
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setForgot(true)} className={plainSmall}>
+            忘記密碼？
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type LockPanelProps = { raw: string; entries: Entry[]; session: Session | null; onSession: (s: Session | null) => void };
+
+function LockPanel({ raw, entries, session, onSession }: LockPanelProps) {
+  const [mode, setMode] = useState<"idle" | "set" | "change" | "remove">("idle");
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const open = (m: typeof mode) => {
+    setMode(m);
+    setCurrent("");
+    setNext("");
+    setConfirm("");
+    setError("");
+  };
+  const needsNew = mode === "set" || mode === "change";
+  const needsCurrent = mode === "change" || mode === "remove";
+  const problem =
+    needsNew && next.length < MIN_PASSWORD
+      ? `密碼至少 ${MIN_PASSWORD} 個字。`
+      : needsNew && next !== confirm
+        ? "兩次輸入的密碼不一樣。"
+        : needsCurrent && !current
+          ? "請輸入目前的密碼。"
+          : "";
+
+  const submit = async () => {
+    if (problem || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      // 變更或移除密碼前先確認目前的密碼，避免別人趁畫面開著時把鎖拿掉。
+      if (needsCurrent && !(await unlock(current, raw))) {
+        setError("目前的密碼不正確。");
+        return;
+      }
+      if (mode === "remove") {
+        if (!writeEntries(entries)) throw new Error();
+        onSession(null);
+      } else {
+        const s = await newSession(next, entries);
+        if (!writeRaw(s.raw)) throw new Error();
+        onSession(s);
+      }
+      open("idle");
+    } catch {
+      setError("儲存失敗：瀏覽器的儲存空間可能已滿或被封鎖。");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const titles = { set: "設定密碼鎖", change: "變更密碼", remove: "移除密碼鎖" };
+
+  return (
+    <section aria-labelledby="mood-lock" className="mt-12 rounded-2xl border border-primary/15 bg-white/50 p-5">
+      <h2 id="mood-lock" className="mb-2 flex items-center gap-2 text-[1.1rem] font-bold text-primary">
+        <LockSimple /> 密碼鎖{session ? "：已開啟" : ""}
+      </h2>
+
+      {mode === "idle" ? (
+        session ? (
+          <>
+            <p className="mb-4 text-[0.95rem] text-muted">紀錄已加密。關閉分頁、閒置 10 分鐘或按「立即上鎖」後，要再輸入密碼才能查看。</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => onSession(null)} className={`${btnSmall} bg-primary text-white hover:bg-primary-dark`}>
+                <LockSimple /> 立即上鎖
+              </button>
+              <button type="button" onClick={() => open("change")} className={outlineSmall}>
+                變更密碼
+              </button>
+              <button type="button" onClick={() => open("remove")} className={plainSmall}>
+                移除密碼鎖
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mb-4 text-[0.95rem] text-muted">和別人共用電腦或手機嗎？設定密碼後，紀錄會加密保存，沒有密碼的人打不開。</p>
+            <button type="button" onClick={() => open("set")} className={outlineSmall}>
+              <LockSimple /> 設定密碼鎖
+            </button>
+          </>
+        )
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+          className="space-y-4"
+        >
+          <UsernameHint />
+          <h3 className="font-semibold">{titles[mode]}</h3>
+          {mode === "set" && (
+            <p className="rounded-2xl bg-[#e9b949]/15 p-3 text-[0.9rem] text-ink/80">
+              <strong>請記好密碼：忘記密碼就無法打開紀錄</strong>，只能清除重來。建議用至少 {MIN_PASSWORD} 個字、別人猜不到的密碼，或交給瀏覽器的密碼管理員保存。
+            </p>
+          )}
+          {mode === "remove" && <p className="text-[0.9rem] text-muted">移除後紀錄會改回不加密保存，使用同一個瀏覽器的人就能看到。</p>}
+          {needsCurrent && <PasswordField label="目前的密碼" value={current} onChange={setCurrent} autoComplete="current-password" />}
+          {needsNew && (
+            <>
+              <PasswordField label={mode === "change" ? "新密碼" : "密碼"} value={next} onChange={setNext} autoComplete="new-password" />
+              <PasswordField label="再輸入一次" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+            </>
+          )}
+          {(error || ((next || confirm) && problem)) && (
+            <p role="alert" className={errorClass}>
+              {error || problem}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" disabled={!!problem || busy} className={`${btnSmall} bg-primary text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40`}>
+              {busy ? "處理中…" : titles[mode]}
+            </button>
+            <button type="button" onClick={() => open("idle")} className={plainSmall}>
+              取消
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

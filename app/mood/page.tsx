@@ -50,7 +50,8 @@ export default function MoodPage() {
             <ul className="mb-8 list-disc space-y-2 pl-5 text-[0.95rem] text-muted marker:text-secondary">
               <li>紀錄只存在這台裝置的這個瀏覽器，不會上傳到任何伺服器，社群夥伴也看不到。</li>
               <li>換手機或電腦就看不到原本的紀錄；清除瀏覽器資料或使用無痕視窗時，紀錄也會消失。可以用「下載紀錄」自行備份。</li>
-              <li>如果是和別人共用的電腦，使用同一個瀏覽器的人也能看到，用完記得清除。</li>
+              <li>如果是和別人共用的電腦或手機，可以開啟「密碼鎖」：紀錄會加密保存，沒有密碼的人打不開。忘記密碼就無法復原，只能清除重來。</li>
+              <li>密碼鎖防的是別人打開同一個瀏覽器偷看；如果裝置被裝了側錄鍵盤的惡意程式，就無法防範。最安全的做法仍是使用自己的裝置。</li>
             </ul>
 
             <p className="rounded-2xl bg-secondary/10 p-4 text-[0.95rem] text-ink/80">

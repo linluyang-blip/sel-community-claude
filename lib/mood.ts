@@ -48,7 +48,7 @@ export function shiftDate(date: string, days: number) {
 }
 
 // 讀進來的資料可能被手動改過或來自舊版，逐筆檢查格式，不合格的直接略過（不信任外部資料）。
-function sanitize(raw: unknown): Entry[] {
+export function sanitize(raw: unknown): Entry[] {
   const list = (raw as { entries?: unknown })?.entries;
   if (!Array.isArray(list)) return [];
   const byDate = new Map<string, Entry>();
@@ -97,16 +97,21 @@ export function subscribe(onChange: () => void) {
   };
 }
 
-/** 寫入紀錄，失敗（空間已滿、被封鎖）時回傳 false。 */
-export function writeEntries(entries: Entry[]): boolean {
+/** 寫入原始字串（null 代表刪除），失敗（空間已滿、被封鎖）時回傳 false。 */
+export function writeRaw(value: string | null): boolean {
   try {
-    if (entries.length) localStorage.setItem(KEY, JSON.stringify({ version: 1, entries: sanitize({ entries }) }));
-    else localStorage.removeItem(KEY);
+    if (value === null) localStorage.removeItem(KEY);
+    else localStorage.setItem(KEY, value);
     window.dispatchEvent(new Event(EVENT));
     return true;
   } catch {
     return false;
   }
+}
+
+/** 以未加密的格式寫入紀錄。 */
+export function writeEntries(entries: Entry[]): boolean {
+  return writeRaw(entries.length ? JSON.stringify({ version: 1, entries: sanitize({ entries }) }) : null);
 }
 
 // ---- 匯出 ----
