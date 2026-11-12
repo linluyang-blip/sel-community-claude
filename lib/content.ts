@@ -193,7 +193,8 @@ export const outcomes: Outcome[] = [
     icon: Books,
     title: "09.18 SEL 讀書會",
     host: { icon: User, label: "黃如昕 召集人" },
-    summary: "活動已於 9/18 辦理，成果照片整理中！分享書籍閱讀心得，協助建立日常自我照顧策略與支持網絡。",
+    summary: "分享書籍閱讀心得，協助建立日常自我照顧策略與支持網絡。",
+    groups: [{ photos: photos("918", 1, 12, "SEL 讀書會成果") }],
   },
   {
     id: "outcome-badminton1",
