@@ -310,7 +310,8 @@ function Radar({ scores, active, onActive }: { scores: number[]; active: number 
           const label = `${competencies[active].name}　${scores[active].toFixed(1)} 分`;
           const w = label.length * 16 + 16;
           const tx = Math.min(Math.max(x - w / 2, -PAD + 4), SIZE + PAD - w - 4);
-          const ty = y - 46 < 4 ? y + 14 : y - 46;
+          // 提示框往圖的中心方向顯示，才不會蓋住外圍的軸標籤。
+          const ty = y < C ? y + 14 : y - 46;
           return (
             <g pointerEvents="none">
               <rect x={tx} y={ty} width={w} height={34} rx={8} fill="var(--color-ink)" fillOpacity={0.9} />

@@ -33,11 +33,15 @@ export default function Breathing() {
         </LinkButton>
       </Hero>
 
-      <Section id="timer">
+      <Section id="practice">
         <Orb speed={0.15} className="top-10 -right-24 size-56 bg-secondary/20 md:size-80" />
         <Orb speed={0.1} className="bottom-10 -left-24 size-56 bg-primary/10 md:size-80" />
         <div className="grid grid-cols-1 gap-6 md:gap-10 lg:grid-cols-5">
-          <div className="rounded-3xl border border-glass bg-card p-6 shadow-soft backdrop-blur-lg md:p-10 lg:col-span-3">
+          {/* 錨點放在卡片上，跳轉後卡片緊貼導覽列下方，手機上整個計時器才放得進一個畫面。 */}
+          <div
+            id="timer"
+            className="rounded-3xl border border-glass bg-card p-5 shadow-soft backdrop-blur-lg md:p-10 lg:col-span-3"
+          >
             <BreathingTimer />
           </div>
 

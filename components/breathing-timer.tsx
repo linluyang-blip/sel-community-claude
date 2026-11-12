@@ -193,7 +193,7 @@ export function BreathingTimer() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="mb-6 flex flex-wrap justify-center gap-2" role="group" aria-label="呼吸方式">
+      <div className="mb-4 flex flex-wrap justify-center gap-2 md:mb-6" role="group" aria-label="呼吸方式">
         {patterns.map((p) => (
           <button
             key={p.id}
@@ -207,7 +207,7 @@ export function BreathingTimer() {
           </button>
         ))}
       </div>
-      <div className="mb-8 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="練習時間">
+      <div className="mb-5 flex flex-wrap items-center justify-center gap-2 md:mb-8" role="group" aria-label="練習時間">
         {durations.map((m) => (
           <button
             key={m}
@@ -222,7 +222,7 @@ export function BreathingTimer() {
         ))}
       </div>
 
-      <div className="relative mb-6 size-[260px] md:size-[320px]">
+      <div className="relative mb-5 size-[220px] min-[400px]:size-[260px] md:mb-6 md:size-[320px]">
         <div className="absolute inset-0 rounded-full border-2 border-dashed border-secondary/40" />
         <div
           ref={circle}
@@ -242,7 +242,7 @@ export function BreathingTimer() {
       <div className="mb-3 h-2 w-full max-w-[320px] overflow-hidden rounded-full bg-secondary/15">
         <div ref={bar} style={{ width: "0%" }} className="h-full rounded-full bg-secondary" />
       </div>
-      <p className="mb-8 min-h-[1.6em] text-center text-[0.95rem] text-muted tabular-nums">
+      <p className="mb-5 min-h-[1.6em] text-center text-[0.95rem] text-muted tabular-nums md:mb-8">
         {status === "done"
           ? "做得很好！花一點時間感受現在身體的狀態。"
           : locked && display.cycle > 0
