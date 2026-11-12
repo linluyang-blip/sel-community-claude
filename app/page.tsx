@@ -59,13 +59,6 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section id="breathing">
-        <div className="space-y-6 md:space-y-10">
-          <BreathingPromo />
-          <SelQuizPromo />
-        </div>
-      </Section>
-
       <Section id="schedule">
         <Orb speed={0.25} className="top-1/4 -left-24 size-64 bg-primary/10 md:size-96" />
         <Orb speed={-0.1} className="right-[-6rem] bottom-1/4 size-56 bg-secondary/15 md:size-80" />
@@ -100,6 +93,13 @@ export default function Home() {
               </Link>
             </Reveal>
           ))}
+        </div>
+      </Section>
+
+      <Section id="breathing">
+        <div className="space-y-6 md:space-y-10">
+          <BreathingPromo />
+          <SelQuizPromo />
         </div>
       </Section>
 
