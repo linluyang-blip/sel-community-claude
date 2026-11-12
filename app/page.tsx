@@ -6,6 +6,7 @@ import { Card, CardIcon } from "@/components/card";
 import { ContactForm } from "@/components/contact-form";
 import { Hero } from "@/components/hero";
 import { LinkButton } from "@/components/link-button";
+import { MoodPromo } from "@/components/mood-promo";
 import { Orb } from "@/components/parallax";
 import { Reveal } from "@/components/reveal";
 import { SelQuizPromo } from "@/components/sel-quiz-promo";
@@ -100,6 +101,7 @@ export default function Home() {
         <div className="space-y-6 md:space-y-10">
           <BreathingPromo />
           <SelQuizPromo />
+          <MoodPromo />
         </div>
       </Section>
 

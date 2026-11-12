@@ -24,6 +24,7 @@ export const competencies: Competency[] = [
       "我能留意情緒在身體上的反應，例如心跳加快、肩膀緊繃。",
     ],
     tip: "每天找一個固定時間（例如下課鐘響後），停下來問自己：「我現在的心情是什麼？身體哪裡緊繃？」",
+    link: { href: "/mood#checkin", label: "用情緒溫度計每天打卡" },
   },
   {
     id: "self-management",

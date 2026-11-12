@@ -12,6 +12,7 @@ const links = [
   { href: "/#members", label: "成員介紹" },
   { href: "/breathing", label: "呼吸放鬆" },
   { href: "/sel-quiz", label: "SEL 自評" },
+  { href: "/mood", label: "情緒溫度計" },
 ];
 
 export function Nav() {
