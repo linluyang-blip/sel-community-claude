@@ -140,7 +140,7 @@ export const schedule: ScheduleItem[] = [
 
 export const members: Member[] = [
   { name: "黃如昕", role: "召集人 / 導師", school: "高餐大附中", avatar: "/avatar-huang.jpg", initial: "昕" },
-  { name: "林律揚", role: "成員 / 導師", school: "高餐大附中", initial: "揚" },
+  { name: "林律揚", role: "成員 / 導師", school: "高餐大附中", avatar: "/avatar-lin.jpg", initial: "揚" },
   { name: "羅琳峰", role: "成員 / 導師", school: "高餐大附中", avatar: "/avatar-feng.jpg", initial: "峰" },
   { name: "蔡宗凌", role: "成員 / 學務主任", school: "高餐大附中", initial: "凌" },
 ];
@@ -186,7 +186,7 @@ export const outcomes: Outcome[] = [
     title: "06.15 桌球實作 II：桌球與情緒調節體驗",
     host: { icon: Barbell, label: "林子鈞 教練", place: "城市桌球" },
     summary: "進階桌球體驗，進一步鞏固身心放鬆技巧與壓力釋放反思，促進社群深度交流。",
-    groups: [{ photos: photos("615", 1, 3, "桌球實作成果") }],
+    groups: [{ photos: photos("615", 1, 5, "桌球實作成果") }],
   },
   {
     id: "outcome-reading",
@@ -201,7 +201,8 @@ export const outcomes: Outcome[] = [
     icon: Barbell,
     title: "10.16 羽球發球機實作 I",
     host: { icon: User, label: "蔡宗凌 主任", place: "高餐大附中 5樓禮堂" },
-    summary: "活動已於 10/16 辦理，成果照片整理中！透過運動促進身心放鬆與體能調適，連結自我管理與情緒調節。",
+    summary: "透過運動促進身心放鬆與體能調適，連結自我管理與情緒調節。",
+    groups: [{ photos: photos("1016", 1, 8, "羽球發球機實作成果") }],
   },
   {
     id: "outcome-badminton2",
