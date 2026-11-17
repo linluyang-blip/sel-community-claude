@@ -142,7 +142,7 @@ export const members: Member[] = [
   { name: "黃如昕", role: "召集人 / 導師", school: "高餐大附中", avatar: "/avatar-huang.jpg", initial: "昕" },
   { name: "林律揚", role: "成員 / 導師", school: "高餐大附中", avatar: "/avatar-lin.jpg", initial: "揚" },
   { name: "羅琳峰", role: "成員 / 導師", school: "高餐大附中", avatar: "/avatar-feng.jpg", initial: "峰" },
-  { name: "蔡宗凌", role: "成員 / 學務主任", school: "高餐大附中", initial: "凌" },
+  { name: "蔡宗凌", role: "成員 / 學務主任", school: "高餐大附中", avatar: "/avatar-tsai.jpg", initial: "凌" },
 ];
 
 export const outcomes: Outcome[] = [
